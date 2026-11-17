@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create and control a sport car in a 3D scene with Three.js</title>
+
+  <style>
+    
+  </style>
+
+  
+</head>
+<body>
+  <!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sport Cars - Three.js</title>
+<style>
+  body { margin:0; overflow:hidden; background:#111; font-family: sans-serif; }
+  #hud { position:absolute; top:10px; left:10px; color:white; font-size:18px; background:rgba(0,0,0,0.5); padding:10px 15px; border-radius:8px; }
+  #speed { font-weight:bold; font-size:22px; color:#00ff88; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+<div id="hud">Prędkość: <span id="speed">0</span> km/h<br>WASD + Spacja (drift)</div>
+<script type="module">
+import * as THREE from 'three';
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0x111111, 50, 300);
+const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Światło
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(20, 50, 20);
+scene.add(dirLight);
+
+// Droga
+const roadGeo = new THREE.PlaneGeometry(30, 2000);
+const roadMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+const road = new THREE.Mesh(roadGeo, roadMat);
+road.rotation.x = -Math.PI/2;
+road.position.z = -800;
+scene.add(road);
+
+// linie
+for(let i=0;i<100;i++){
+  const line = new THREE.Mesh(new THREE.PlaneGeometry(1,10), new THREE.MeshStandardMaterial({color:0xffffff}));
+  line.rotation.x = -Math.PI/2;
+  line.position.set(0,0.1,i*20-1000);
+  scene.add(line);
+}
+
+// Auto gracza - sportowe
+function createSportCar(color){
+  const group = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(4,1.5,8), new THREE.MeshStandardMaterial({color}));
+  body.position.y = 1;
+  group.add(body);
+  const cabin = new THREE.Mesh(new THREE.BoxGeometry(2.5,1,3), new THREE.MeshStandardMaterial({color:0x111111}));
+  cabin.position.set(0,1.8,-0.5);
+  group.add(cabin);
+  return group;
+}
+
+const playerCar = createSportCar(0x00ff88);
+scene.add(playerCar);
+playerCar.position.set(0,0,0);
+
+// Ruch
+let speed = 0, maxSpeed = 1.2, steering = 0;
+const keys = {};
+onkeydown = e => keys[e.code]=true;
+onkeyup = e => keys[e.code]=false;
+
+// Inne auta
+const traffic = [];
+for(let i=0;i<8;i++){
+  const c = createSportCar(Math.random()>0.5?0xff0040:0x0088ff);
+  c.position.set((Math.random()-0.5)*20,0, -50 - Math.random()*800);
+  c.userData.speed = 0.3 + Math.random()*0.6;
+  traffic.push(c);
+  scene.add(c);
+}
+
+camera.position.set(0,8,15);
+camera.lookAt(playerCar.position);
+
+function animate(){
+  requestAnimationFrame(animate);
+  
+  if(keys['KeyW']) speed = Math.min(speed+0.02, maxSpeed);
+  if(keys['KeyS']) speed = Math.max(speed-0.04, -0.3);
+  if(!keys['KeyW'] && !keys['KeyS']) speed *= 0.98;
+  if(keys['KeyA']) steering = Math.min(steering+0.04, 1);
+  if(keys['KeyD']) steering = Math.max(steering-0.04, -1);
+  if(!keys['KeyA'] && !keys['KeyD']) steering *= 0.9;
+  
+  if(keys['Space']){ steering *= 1.05; speed *= 0.995; }
+
+  playerCar.rotation.y = steering*0.5;
+  playerCar.position.x -= steering*speed*1.5;
+  playerCar.position.x = Math.max(-12, Math.min(12, playerCar.position.x));
+  
+  traffic.forEach(car=>{
+    car.position.z += speed*2 - car.userData.speed;
+    if(car.position.z > 20){
+      car.position.z = -800 - Math.random()*400;
+      car.position.x = (Math.random()-0.5)*20;
+    }
+    // kolizja prosta
+    if(Math.abs(car.position.x - playerCar.position.x)<4 && Math.abs(car.position.z - playerCar.position.z)<8){
+      speed *= 0.5;
+      car.position.z -= 10;
+    }
+  });
+
+  camera.position.x += (playerCar.position.x - camera.position.x)*0.1;
+  camera.lookAt(playerCar.position.x,0,playerCar.position.z-20);
+
+  document.getElementById('speed').textContent = Math.round(speed*200);
+  
+  renderer.render(scene,camera);
+}
+animate();
+</script>
+</body>
+</html>
+
+  <script>
+    
+  </script>
+</body>
+</html>
